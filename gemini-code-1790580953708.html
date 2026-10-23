@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Blind Sniper (Kör Nişancı)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body { background-color: #0b0704; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff; overflow: hidden; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    #gameContainer { position: relative; width: 100vw; height: 100vh; max-width: 1200px; max-height: 800px; background: radial-gradient(circle at 50% 20%, #2b1f14 0%, #0d0805 90%); box-shadow: 0 0 50px rgba(0, 0, 0, 0.9); border: 4px solid #4a2c11; border-radius: 12px; overflow: hidden; }
+    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+    .active-screen { display: flex; }
+    .btn { background: linear-gradient(180deg, #ff9f1a 0%, #e65100 100%); color: #fff; border: 3px solid #ffcc80; padding: 12px 28px; font-size: 1.15rem; font-weight: 900; border-radius: 50px; cursor: pointer; box-shadow: 0 6px 15px rgba(230, 81, 0, 0.5); text-transform: uppercase; margin: 8px; }
+    .btn:hover { transform: translateY(-2px) scale(1.03); }
+    .btn-secondary { background: linear-gradient(180deg, #4e342e 0%, #27160c 100%); border-color: #8d6e63; }
+    
+    /* KÖŞEDEKİ AI SOHBET METNİ BUTONU */
+    .btn-corner-ai {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(180deg, #3949ab 0%, #1a237e 100%);
+      color: #e8eaf6;
+      border: 2px solid #7986cb;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 30;
+      transition: all 0.2s ease;
+    }
+    .btn-corner-ai:hover {
+      background: linear-gradient(180deg, #3f51b5 0%, #283593 100%);
+      transform: scale(1.04);
+      box-shadow: 0 6px 16px rgba(63, 81, 181, 0.5);
+    }
+
+    /* TEZGAH EKRANINDAKİ ANA MENÜ BUTONU */
+    .btn-back-menu {
+      background: linear-gradient(180deg, #b71c1c 0%, #7f0000 100%);
+      color: #ffebee;
+      border: 2px solid #ef5350;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      border-radius: 20px;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .btn-back-menu:hover {
+      background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%);
+      transform: scale(1.03);
+    }
+
+    #menuScreen { background: radial-gradient(circle at 50% 30%, #3e2723 0%, #1a0c02 80%); text-align: center; padding: 20px; }
+    .game-title { font-size: 3rem; font-weight: 900; color: #ffb300; text-shadow: 0 4px 0 #b71c1c; margin-bottom: 5px; }
+    .game-subtitle { font-size: 1.1rem; color: #ffcc80; margin-bottom: 15px; font-weight: 600; }
+    .menu-character-art { width: 180px; height: 180px; margin-bottom: 15px; }
+    .menu-buttons { display: flex; flex-direction: column; gap: 5px; width: 260px; }
+    
+    /* MODALLAR */
+    .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(8, 4, 2, 0.95); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 25px; backdrop-filter: blur(5px); }
+    .guide-card { background: #2b180d; border: 3px solid #ff9800; border-radius: 16px; width: 100%; max-width: 800px; max-height: 90%; display: flex; flex-direction: column; overflow: hidden; }
+    .guide-header { background: #4e260c; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff9800; }
+    .guide-header h2 { color: #ffc107; font-size: 1.5rem; }
+    .guide-body { padding: 20px 25px; overflow-y: auto; color: #fbe9e7; font-size: 0.95rem; line-height: 1.6; }
+    .guide-section { margin-bottom: 15px; background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #ff9800; }
+    .guide-section h3 { color: #ffb74d; margin-bottom: 6px; }
+
+    /* AI LINK MODAL KUTUSU */
+    .ai-modal-box {
+      background: #1c130d;
+      border: 3px solid #5c6bc0;
+      border-radius: 16px;
+      padding: 25px;
+      max-width: 550px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(63, 81, 181, 0.4);
+    }
+    .ai-modal-box h3 {
+      color: #9fa8da;
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .link-copy-wrapper {
+      display: flex;
+      align-items: center;
+      background: #0f0a07;
+      border: 2px solid #3f51b5;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+    .link-input-display {
+      flex: 1;
+      padding: 12px 14px;
+      background: transparent;
+      border: none;
+      color: #c5cae9;
+      font-size: 0.95rem;
+      outline: none;
+      user-select: all;
+      -webkit-user-select: all;
+    }
+    .btn-copy {
+      background: linear-gradient(180deg, #3f51b5 0%, #283593 100%);
+      color: #fff;
+      border: none;
+      border-left: 2px solid #5c6bc0;
+      padding: 12px 18px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-copy:hover {
+      background: linear-gradient(180deg, #5c6bc0 0%, #3949ab 100%);
+    }
+    .btn-copy:active {
+      transform: scale(0.96);
+    }
+    .copy-success-badge {
+      display: none;
+      color: #4caf50;
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    #storyScreen { background: #120904; padding: 20px; }
+    .comic-panel { width: 100%; max-width: 580px; background: #271408; border: 4px solid #ff9800; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .comic-art { width: 260px; height: 190px; margin-bottom: 15px; }
+    .comic-caption { font-size: 1.1rem; color: #ffe0b2; min-height: 50px; line-height: 1.4; }
+    #gameScreen { background: #0d0603; overflow: hidden; cursor: crosshair; }
+    .game-hud { position: absolute; top: 15px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 25; pointer-events: none; }
+    .hud-box { background: rgba(28, 14, 6, 0.85); border: 2px solid #8d6e63; padding: 8px 18px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-weight: 800; }
+    .hud-target { border-color: #ff9800; color: #ffca28; }
+    .heart { color: #e53935; font-size: 1.3rem; }
+    .heart.lost { color: #424242; }
+    .street-lamp { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 140px; height: 90px; z-index: 22; pointer-events: none; }
+    .light-cone { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: 850px; height: 700px; background: radial-gradient(ellipse at 50% 0%, rgba(255, 235, 150, 0.5) 0%, rgba(255, 180, 50, 0.25) 45%, rgba(0, 0, 0, 0) 75%); pointer-events: none; z-index: 15; transition: opacity 0.25s ease; }
+    .market-stall { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); width: 90%; height: 440px; background: repeating-linear-gradient(90deg, #4a2612, #4a2612 90px, #3b1e0e 90px, #3b1e0e 94px); border: 8px solid #2e160a; border-radius: 18px; z-index: 12; overflow: hidden; }
+    .item-entity { position: absolute; width: 150px; height: 150px; transform: translate(-50%, -50%); z-index: 14; pointer-events: none; }
+    .item-entity svg { width: 100%; height: 100%; filter: drop-shadow(0 12px 14px rgba(0,0,0,0.7)); }
+    #darknessCurtain { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 20; pointer-events: none; transition: opacity 0.3s ease; }
+    #darknessCurtain.pitch-black { opacity: 1; pointer-events: auto; }
+    .countdown-banner { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 2px solid #ff9800; color: #ffca28; padding: 8px 24px; border-radius: 30px; font-size: 1.1rem; font-weight: 800; z-index: 25; display: flex; align-items: center; gap: 15px; }
+    .skip-timer-btn { background: #ff9800; color: #210d02; border: none; border-radius: 20px; padding: 4px 14px; font-size: 0.85rem; font-weight: 900; cursor: pointer; pointer-events: auto; }
+    .bullet-hole { position: absolute; width: 22px; height: 22px; background: radial-gradient(circle, #050505 40%, #422615 70%, transparent 90%); border-radius: 50%; transform: translate(-50%, -50%); z-index: 18; pointer-events: none; }
+    .splat-fx { position: absolute; font-size: 2.2rem; font-weight: 900; transform: translate(-50%, -50%); animation: splatPop 0.8s forwards; z-index: 22; pointer-events: none; }
+    @keyframes splatPop { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0.3); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
+    #roundFeedbackModal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(28, 14, 6, 0.95); border: 4px solid #ff9800; border-radius: 16px; padding: 25px 40px; text-align: center; z-index: 30; display: none; }
+    #endScreen { background: #0d0603; padding: 20px; text-align: center; }
+    .end-art-wrapper { width: 280px; height: 220px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <div id="gameContainer">
+    <!-- MENÜ -->
+    <div id="menuScreen" class="screen active-screen">
+      <!-- KÖŞEDEKİ AI SOHBET METNİNİ GÖR BUTONU -->
+      <button class="btn-corner-ai" id="btnOpenAiModal">
+        <span>🤖 AI Sohbet Metnini Gör</span>
+      </button>
+
+      <div class="menu-character-art">
+        <svg viewBox="0 0 200 200" width="100%" height="100%">
+          <ellipse cx="100" cy="185" rx="55" ry="12" fill="rgba(0,0,0,0.5)" />
+          <path d="M70 140 L60 185 M130 140 L140 185" stroke="#4a2612" stroke-width="8" stroke-linecap="round" />
+          <rect x="60" y="132" width="80" height="12" rx="4" fill="#6d3d19" />
+          <path d="M75 130 L75 175 M125 130 L125 175" stroke="#1565c0" stroke-width="14" stroke-linecap="round" />
+          <rect x="68" y="75" width="64" height="60" rx="8" fill="#c62828" />
+          <path d="M84 75 L84 135 M100 75 L100 135 M116 75 L116 135" stroke="#212121" stroke-width="4" />
+          <path d="M68 95 L132 95 M68 115 L132 115" stroke="#212121" stroke-width="4" />
+          <circle cx="100" cy="48" r="24" fill="#ffcc80" />
+          <path d="M78 44 Q100 32 122 44" stroke="#e0e0e0" stroke-width="6" fill="none" stroke-linecap="round" />
+          <circle cx="100" cy="56" r="3.5" fill="#d84315" />
+          <text x="135" y="45" font-size="20" fill="#ffeb3b">♪</text>
+        </svg>
+      </div>
+      <h1 class="game-title">BLIND SNIPER</h1>
+      <p class="game-subtitle">Kör Nişancı: Tezgahtaki Çürük Avı</p>
+      <div class="menu-buttons">
+        <button class="btn" id="btnStartGame">BAŞLA</button>
+        <button class="btn btn-secondary" id="btnOpenGuide">OYUNU ANLA</button>
+      </div>
+    </div>
+
+    <!-- AI SOHBET METNİ MODAL PENCERESİ -->
+    <div id="aiModal" class="modal-overlay">
+      <div class="ai-modal-box">
+        <h3>🤖 Gemini AI Sohbet Metni</h3>
+        <p style="color: #c5cae9; font-size: 0.9rem;">Oyunun oluşturulma ve geliştirme aşamasındaki sohbet linki:</p>
+        
+        <div class="link-copy-wrapper">
+          <input type="text" id="aiShareLinkInput" class="link-input-display" value="https://share.gemini.google/rLFqKucln4LV" readonly>
+          <button class="btn-copy" id="btnCopyLink">
+            <span id="copyBtnText">Kopyala</span>
+          </button>
+        </div>
+
+        <div id="copySuccessMsg" class="copy-success-badge">✔ Link panoya başarıyla kopyalandı!</div>
+
+        <button class="btn btn-secondary" id="btnCloseAiModal" style="margin-top: 8px; padding: 8px 24px; font-size: 0.95rem;">KAPAT</button>
+      </div>
+    </div>
+
+    <!-- OYUNU ANLA MODALI -->
+    <div id="guideModal" class="modal-overlay">
+      <div class="guide-card">
+        <div class="guide-header">
+          <h2>🎯 OYUN REHBERİ</h2>
+          <button class="skip-timer-btn" id="btnCloseGuide">✕ KAPAT</button>
+        </div>
+        <div class="guide-body">
+          <div class="guide-section">
+            <h3>📖 Hikâye</h3>
+            <p>Gece vakti tezgahına gelen kasalardan çürük kokulu meyveler çıkar[cite: 1]! Tüfeğini alıp tam vuracakken arızalı sokak lambası söner[cite: 1]. Hafızana güvenerek karanlıkta nişan almalısın[cite: 1]!</p>
+          </div>
+          <div class="guide-section">
+            <h3>🕹️ Nasıl Oynanır?</h3>
+            <p>• <b>5 saniye</b> boyunca meyvelerin yerini ezberle.<br>• Ekran karardığında çürük meyvelerin yerine tıkla ve ateş et[cite: 1].<br>• Lamba tekrar açılınca mermilerin sonucu gösterilir[cite: 1].</p>
+          </div>
+          <div class="guide-section">
+            <h3>📈 Kademeler & Canlar</h3>
+            <p>• <b>1-5. Seviye:</b> Hedef baştan gösterilir[cite: 1].<br>• <b>6-10. Seviye:</b> Tezgaha BOMBALAR (💣) gelir, bombayı vurursan tüm canların biter[cite: 1]!<br>• <b>11-15. Seviye:</b> Hedef ezber anında gizlidir, karanlıkta anons edilir[cite: 1]!<br>• Toplam <b>3 Canın</b> vardır[cite: 1].</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HİKÂYE PANELİ -->
+    <div id="storyScreen" class="screen">
+      <div class="comic-panel">
+        <div class="comic-art" id="comicArtSlot"></div>
+        <p class="comic-caption" id="comicCaptionText">Yükleniyor...</p>
+        <button class="btn" id="btnNextStory">DEVAM ET →</button>
+      </div>
+    </div>
+
+    <!-- OYUN SAHASI (TEZGAH EKRANI) -->
+    <div id="gameScreen" class="screen">
+      <div class="game-hud">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <!-- TEZGAH BÖLÜMÜNDEKİ ANA MENÜYE DÖN BUTONU -->
+          <button class="btn-back-menu" id="btnBackToMenu">
+            <span>🏠 Menü</span>
+          </button>
+          <div class="hud-box"><span>SEVİYE:</span> <span id="hudLevel" style="color:#ff9800;">1 / 15</span></div>
+        </div>
+        
+        <div class="hud-box hud-target"><span id="hudTargetName">Elma</span></div>
+        
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="hud-box"><span>MERMİ:</span> <span id="hudAmmoText">3/3</span></div>
+          <div class="hud-box"><div id="hudLives"><span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span></div></div>
+        </div>
+      </div>
+
+      <div class="street-lamp">
+        <svg viewBox="0 0 140 90" width="100%" height="100%">
+          <path d="M70 0 L70 35" stroke="#212121" stroke-width="8" />
+          <path d="M30 35 L110 35 L95 65 L45 65 Z" fill="#37474f" />
+          <ellipse cx="70" cy="65" rx="25" ry="8" fill="#fff59d" />
+        </svg>
+      </div>
+      <div class="light-cone" id="lightCone"></div>
+
+      <div class="countdown-banner" id="countdownBanner">
+        <span>Süre: <b id="countdownSec" style="color:#fff;">5</b>s</span>
+        <button class="skip-timer-btn" id="btnForceDark">Ezberledim! Kapat</button>
+      </div>
+
+      <div class="market-stall" id="marketStall"></div>
+      <div id="darknessCurtain"></div>
+
+      <div id="roundFeedbackModal">
+        <h2 id="feedbackTitle" style="font-size:1.8rem; margin-bottom:10px;">GÜZEL VURUŞ!</h2>
+        <p id="feedbackDesc" style="color:#ffcc80; margin-bottom:15px; font-weight:600;">Hedef vuruldu.</p>
+        <button class="btn" id="btnNextRound">SONRAKİ →</button>
+      </div>
+    </div>
+
+    <!-- BİTİŞ EKRANI -->
+    <div id="endScreen" class="screen">
+      <div class="end-art-wrapper" id="endArtSlot"></div>
+      <h1 class="game-title" id="endTitle">OYUN BİTTİ</h1>
+      <p class="game-subtitle" id="endSubtitle">Sonuç ekranı</p>
+      <button class="btn" id="btnRestart">YENİDEN BAŞLA</button>
+    </div>
+  </div>
+
+  <script>
+    class SoundEngine {
+      constructor() { this.ctx = null; this.isWhistling = false; this.timer = null; }
+      init() {
+        if (!this.ctx) { const AudioContext = window.AudioContext || window.webkitAudioContext; this.ctx = new AudioContext(); }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      startWhistleMelody() {
+        if (this.isWhistling) return;
+        this.init();
+        this.isWhistling = true;
+        const melody = [{f:587,d:0.4},{f:659,d:0.4},{f:783,d:0.6},{f:880,d:0.4},{f:783,d:0.5},{f:659,d:0.7},{f:0,d:0.3},{f:587,d:0.4},{f:659,d:0.4},{f:523,d:0.8},{f:440,d:0.6},{f:523,d:1.0},{f:0,d:0.6}];
+        let idx = 0;
+        const play = () => {
+          if (!this.isWhistling || !this.ctx) return;
+          const itm = melody[idx];
+          idx = (idx + 1) % melody.length;
+          if (itm.f > 0) {
+            const osc = this.ctx.createOscillator();
+            const gn = this.ctx.createGain();
+            const vib = this.ctx.createOscillator();
+            const vg = this.ctx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(itm.f, this.ctx.currentTime);
+            vib.frequency.setValueAtTime(5.5, this.ctx.currentTime);
+            vg.gain.setValueAtTime(4.5, this.ctx.currentTime);
+            vib.connect(osc.frequency);
+            gn.gain.setValueAtTime(0.001, this.ctx.currentTime);
+            gn.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + 0.08);
+            gn.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + itm.d - 0.04);
+            osc.connect(gn); gn.connect(this.ctx.destination);
+            osc.start(); vib.start();
+            osc.stop(this.ctx.currentTime + itm.d); vib.stop(this.ctx.currentTime + itm.d);
+          }
+          this.timer = setTimeout(play, itm.d * 1000);
+        };
+        play();
+      }
+      stopWhistleMelody() { this.isWhistling = false; if (this.timer) clearTimeout(this.timer); }
+      playGunshot() {
+        this.init();
+        const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.5, this.ctx.sampleRate);
+        const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = this.ctx.createBufferSource(); src.buffer = buf;
+        const flt = this.ctx.createBiquadFilter(); flt.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        flt.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.4);
+        const gn = this.ctx.createGain(); gn.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gn.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+        src.connect(flt); flt.connect(gn); gn.connect(this.ctx.destination);
+        src.start();
+      }
+      playSplat() {
+        this.init();
+        const osc = this.ctx.createOscillator(); const gn = this.ctx.createGain();
+        osc.frequency.setValueAtTime(260, this.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.25);
+        gn.gain.setValueAtTime(0.2, this.ctx.currentTime); gn.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+        osc.connect(gn); gn.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.25);
+      }
+      playExplosion() {
+        this.init();
+        const osc = this.ctx.createOscillator(); const gn = this.ctx.createGain();
+        osc.type = 'square'; osc.frequency.setValueAtTime(140, this.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(25, this.ctx.currentTime + 0.8);
+        gn.gain.setValueAtTime(0.4, this.ctx.currentTime); gn.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
+        osc.connect(gn); gn.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.8);
+      }
+    }
+    const sound = new SoundEngine();
+
+    const Graphics = {
+      getApple(r) {
+        return r
+          ? `<svg viewBox="0 0 100 100"><path d="M30 20 Q20 5 35 2" stroke="#7cb342" stroke-width="3" fill="none"/><circle cx="22" cy="22" r="2.5" fill="#212121"/><path d="M50 30 C30 18 10 32 16 62 C22 88 45 92 50 82 C55 92 78 88 84 62 C90 32 70 18 50 30 Z" fill="#556b2f" stroke="#2e3819" stroke-width="3"/><circle cx="42" cy="58" r="8" fill="#1b120a"/></svg>`
+          : `<svg viewBox="0 0 100 100"><path d="M50 20 Q52 8 62 10" stroke="#5d4037" stroke-width="5" fill="none"/><path d="M50 30 C30 18 10 32 16 62 C22 88 45 92 50 82 C55 92 78 88 84 62 C90 32 70 18 50 30 Z" fill="#e53935" stroke="#b71c1c" stroke-width="3"/></svg>`;
+      },
+      getOrange(r) {
+        return r
+          ? `<svg viewBox="0 0 100 100"><circle cx="20" cy="30" r="2.5" fill="#111"/><circle cx="50" cy="54" r="36" fill="#4a5d23" stroke="#25310e" stroke-width="3"/><ellipse cx="46" cy="54" rx="10" ry="7" fill="#81c784"/></svg>`
+          : `<svg viewBox="0 0 100 100"><circle cx="50" cy="54" r="36" fill="#fb8c00" stroke="#e65100" stroke-width="3"/><ellipse cx="58" cy="16" rx="8" ry="4" fill="#43a047"/></svg>`;
+      },
+      getBanana(r) {
+        return r
+          ? `<svg viewBox="0 0 100 100"><circle cx="75" cy="18" r="2.5" fill="#111"/><path d="M22 75 C18 45 42 20 80 20 C76 28 65 30 56 38 C42 50 35 65 32 78 Z" fill="#4a3f2c" stroke="#272115" stroke-width="3"/></svg>`
+          : `<svg viewBox="0 0 100 100"><path d="M22 75 C18 45 42 20 80 20 C76 28 65 30 56 38 C42 50 35 65 32 78 Z" fill="#fdd835" stroke="#f57f17" stroke-width="3"/></svg>`;
+      },
+      getWatermelon(r) {
+        return r
+          ? `<svg viewBox="0 0 100 100"><path d="M15 45 C25 80 75 80 85 45 Z" fill="#1c3b1e" stroke="#0e2010" stroke-width="3"/><path d="M23 45 C30 68 70 68 77 45 Z" fill="#4d332d"/><circle cx="50" cy="55" r="5" fill="#689f38"/></svg>`
+          : `<svg viewBox="0 0 100 100"><path d="M15 45 C25 80 75 80 85 45 Z" fill="#2e7d32" stroke="#1b5e20" stroke-width="3"/><path d="M23 45 C30 68 70 68 77 45 Z" fill="#e53935"/></svg>`;
+      },
+      getBomb() {
+        return `<svg viewBox="0 0 100 100"><path d="M68 28 Q75 18 82 22" stroke="#ff9800" stroke-width="4" fill="none"/><polygon points="82,22 88,14 84,24" fill="#ffeb3b"/><circle cx="48" cy="58" r="34" fill="#212121" stroke="#000" stroke-width="4"/><text x="40" y="68" font-size="26" font-weight="900" fill="#f44336">!</text></svg>`;
+      },
+      getStoryIllustration(i) {
+        if (i === 0) return `<svg viewBox="0 0 240 180" width="100%" height="100%"><rect width="240" height="180" fill="#1b1008" rx="10"/><circle cx="120" cy="110" r="22" fill="#ffcc80"/><text x="145" y="105" font-size="22" fill="#ffeb3b">♪ ♬</text></svg>`;
+        if (i === 1) return `<svg viewBox="0 0 240 180" width="100%" height="100%"><rect width="240" height="180" fill="#100b07" rx="10"/><rect x="25" y="70" width="110" height="70" fill="#5d4037"/><circle cx="65" cy="145" r="16" fill="#212121"/><circle cx="170" cy="145" r="16" fill="#212121"/></svg>`;
+        if (i === 2) return `<svg viewBox="0 0 240 180" width="100%" height="100%"><rect width="240" height="180" fill="#10180a" rx="10"/><text x="110" y="90" font-size="36">🤢 💨</text></svg>`;
+        return `<svg viewBox="0 0 240 180" width="100%" height="100%"><rect width="240" height="180" fill="#0b0704" rx="10"/><path d="M100 120 L195 65" stroke="#78909c" stroke-width="8"/><text x="75" y="55" font-size="20" fill="#ff9800" font-weight="bold">BZZT!</text></svg>`;
+      }
+    };
+
+    const FRUITS = [
+      { id: 'apple', name: 'Elma', r: (rotten) => Graphics.getApple(rotten) },
+      { id: 'orange', name: 'Portakal', r: (rotten) => Graphics.getOrange(rotten) },
+      { id: 'banana', name: 'Muz', r: (rotten) => Graphics.getBanana(rotten) },
+      { id: 'watermelon', name: 'Karpuz', r: (rotten) => Graphics.getWatermelon(rotten) }
+    ];
+
+    const STORY = [
+      "Satıcımız gece yarısı tezgahının başında keyifle ıslık çalmaktadır...",
+      "Derken kamyonetle yeni meyve kasaları yanaşır...",
+      "Kasalar açıldığında berbat bir çürük kokusu yayılır!",
+      "Satıcı tüfeğini alır, ancak tam o an sokak lambası söner!"
+    ];
+
+    let level = 1, lives = 3, targetId = '', shots = [], maxShots = 3, items = [], storyIdx = 0, timer = null;
+
+    function setScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+      document.getElementById(id).classList.add('active-screen');
+      if (id === 'menuScreen') sound.startWhistleMelody(); else sound.stopWhistleMelody();
+    }
+
+    // MENÜ BUTONLARI
+    document.getElementById('btnStartGame').onclick = () => { sound.init(); storyIdx = 0; showStory(); };
+    document.getElementById('btnOpenGuide').onclick = () => { sound.init(); document.getElementById('guideModal').style.display = 'flex'; };
+    document.getElementById('btnCloseGuide').onclick = () => { document.getElementById('guideModal').style.display = 'none'; };
+
+    // TEZGAH BÖLÜMÜNDEN ANA MENÜYE DÖNÜŞ BUTONU
+    document.getElementById('btnBackToMenu').onclick = () => {
+      if (timer) clearInterval(timer);
+      document.getElementById('darknessCurtain').classList.remove('pitch-black');
+      document.getElementById('lightCone').style.opacity = '1';
+      document.getElementById('roundFeedbackModal').style.display = 'none';
+      setScreen('menuScreen');
+    };
+
+    // AI SOHBET METNİ MODAL VE KOPYALAMA İŞLEMLERİ
+    const aiModal = document.getElementById('aiModal');
+    const copySuccessMsg = document.getElementById('copySuccessMsg');
+    const copyBtnText = document.getElementById('copyBtnText');
+
+    document.getElementById('btnOpenAiModal').onclick = () => {
+      sound.init();
+      copySuccessMsg.style.display = 'none';
+      copyBtnText.innerText = 'Kopyala';
+      aiModal.style.display = 'flex';
+    };
+
+    document.getElementById('btnCloseAiModal').onclick = () => {
+      aiModal.style.display = 'none';
+    };
+
+    document.getElementById('btnCopyLink').onclick = async () => {
+      const linkText = document.getElementById('aiShareLinkInput').value;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(linkText);
+        } else {
+          const input = document.getElementById('aiShareLinkInput');
+          input.select();
+          input.setSelectionRange(0, 99999);
+          document.execCommand('copy');
+        }
+        copySuccessMsg.style.display = 'block';
+        copyBtnText.innerText = 'Kopyalandı!';
+        setTimeout(() => {
+          copyBtnText.innerText = 'Kopyala';
+        }, 2500);
+      } catch (err) {
+        alert("Link kopyalandı: " + linkText);
+      }
+    };
+
+    function showStory() {
+      setScreen('storyScreen');
+      document.getElementById('comicArtSlot').innerHTML = Graphics.getStoryIllustration(storyIdx);
+      document.getElementById('comicCaptionText').innerText = STORY[storyIdx];
+    }
+
+    document.getElementById('btnNextStory').onclick = () => {
+      storyIdx++;
+      if (storyIdx < STORY.length) showStory();
+      else { setScreen('gameScreen'); startLevel(1); }
+    };
+
+    function startLevel(lvl) {
+      level = lvl; shots = [];
+      document.getElementById('roundFeedbackModal').style.display = 'none';
+      document.getElementById('darknessCurtain').classList.remove('pitch-black');
+      document.getElementById('lightCone').style.opacity = '1';
+      document.querySelectorAll('.bullet-hole, .splat-fx').forEach(e => e.remove());
+
+      const chosen = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+      targetId = chosen.id;
+      document.getElementById('hudLevel').innerText = `${level} / 15`;
+      document.getElementById('hudTargetName').innerText = level >= 11 ? "❓ (Gizli)" : chosen.name;
+
+      buildStall();
+      updateHUD();
+
+      let sec = 5;
+      document.getElementById('countdownBanner').style.display = 'flex';
+      document.getElementById('countdownSec').innerText = sec;
+      if (timer) clearInterval(timer);
+      timer = setInterval(() => {
+        sec--;
+        document.getElementById('countdownSec').innerText = sec;
+        if (sec <= 0) { clearInterval(timer); goDark(); }
+      }, 1000);
+    }
+
+    document.getElementById('btnForceDark').onclick = () => { if (timer) clearInterval(timer); goDark(); };
+
+    function buildStall() {
+      const stall = document.getElementById('marketStall');
+      stall.innerHTML = ''; items = [];
+      const w = stall.clientWidth || 800, h = stall.clientHeight || 400;
+      const count = level <= 4 ? 2 : 3;
+      maxShots = count;
+
+      const list = [];
+      for (let i = 0; i < count; i++) list.push({ type: targetId, rotten: true, bomb: false });
+      while (list.length < 6) {
+        const f = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+        list.push({ type: f.id, rotten: f.id !== targetId && Math.random() > 0.6, bomb: false });
+      }
+      if (level >= 6 && level <= 10) { list.push({ type: 'bomb', rotten: false, bomb: true }); }
+
+      const coords = [];
+      list.forEach((item, i) => {
+        let x = 85 + Math.random() * (w - 170), y = 85 + Math.random() * (h - 170);
+        coords.push({ x, y });
+        const d = document.createElement('div');
+        d.className = 'item-entity';
+        d.style.left = `${x}px`; d.style.top = `${y}px`;
+        d.innerHTML = item.bomb ? Graphics.getBomb() : FRUITS.find(f => f.id === item.type).r(item.rotten);
+        stall.appendChild(d);
+        items.push({ x, y, type: item.type, rotten: item.rotten, bomb: item.bomb, dom: d, hit: false });
+      });
+    }
+
+    function goDark() {
+      document.getElementById('countdownBanner').style.display = 'none';
+      document.getElementById('lightCone').style.opacity = '0';
+      document.getElementById('darknessCurtain').classList.add('pitch-black');
+      if (level >= 11) {
+        const obj = FRUITS.find(f => f.id === targetId);
+        document.getElementById('hudTargetName').innerText = `${obj.name}! (VUR!)`;
+      }
+    }
+
+    document.getElementById('darknessCurtain').onclick = (e) => {
+      if (shots.length >= maxShots) return;
+      const rect = document.getElementById('marketStall').getBoundingClientRect();
+      shots.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      sound.playGunshot();
+      updateHUD();
+      if (shots.length >= maxShots) setTimeout(evaluateRound, 500);
+    };
+
+    function evaluateRound() {
+      document.getElementById('darknessCurtain').classList.remove('pitch-black');
+      document.getElementById('lightCone').style.opacity = '1';
+      const stall = document.getElementById('marketStall');
+
+      let hitBomb = false, correct = 0, wrong = 0;
+      const need = items.filter(i => i.rotten && i.type === targetId).length;
+
+      shots.forEach(s => {
+        const hole = document.createElement('div');
+        hole.className = 'bullet-hole'; hole.style.left = `${s.x}px`; hole.style.top = `${s.y}px`;
+        stall.appendChild(hole);
+
+        let hit = items.find(it => Math.hypot(it.x - s.x, it.y - s.y) <= 75 && !it.hit);
+        if (hit) {
+          hit.hit = true;
+          const fx = document.createElement('div'); fx.className = 'splat-fx';
+          fx.style.left = `${hit.x}px`; fx.style.top = `${hit.y}px`;
+          if (hit.bomb) { hitBomb = true; fx.innerText = '💥'; sound.playExplosion(); }
+          else if (hit.rotten && hit.type === targetId) { correct++; fx.innerText = '🎯'; sound.playSplat(); }
+          else { wrong++; fx.innerText = '❌'; sound.playSplat(); }
+          stall.appendChild(fx);
+        }
+      });
+
+      setTimeout(() => {
+        const modal = document.getElementById('roundFeedbackModal');
+        if (hitBomb) {
+          lives = 0; updateHUD();
+          finishGame(false, "BOMBAYI VURDUNUZ! Tüm canlar tükendi![cite: 1]");
+          return;
+        }
+        if (correct === need && wrong === 0) {
+          if (level >= 15) { finishGame(true, "15 Seviyeyi başarıyla tamamladınız[cite: 1]!"); return; }
+          document.getElementById('feedbackTitle').innerText = "HARİKA VURUŞ!";
+          document.getElementById('feedbackDesc').innerText = "Tüm çürükler başarıyla imha edildi.";
+          document.getElementById('btnNextRound').innerText = "SONRAKİ SEVİYE";
+          document.getElementById('btnNextRound').onclick = () => startLevel(level + 1);
+          modal.style.display = 'block';
+        } else {
+          lives--; updateHUD();
+          if (lives <= 0) { finishGame(false, "Canlarınız bitti[cite: 1]! Çürükler tezgahı sardı."); return; }
+          document.getElementById('feedbackTitle').innerText = "ISKA VEYA YANLIŞ HEDEF!";
+          document.getElementById('feedbackDesc').innerText = `1 Can kaybettiniz. Kalan can: ${lives}`;
+          document.getElementById('btnNextRound').innerText = "TEKRAR DENE";
+          document.getElementById('btnNextRound').onclick = () => startLevel(level);
+          modal.style.display = 'block';
+        }
+      }, 1000);
+    }
+
+    function updateHUD() {
+      document.getElementById('hudAmmoText').innerText = `${Math.max(0, maxShots - shots.length)}/${maxShots}`;
+      document.querySelectorAll('#hudLives .heart').forEach((h, i) => {
+        if (i < lives) h.classList.remove('lost'); else h.classList.add('lost');
+      });
+    }
+
+    function finishGame(win, msg) {
+      setScreen('endScreen');
+      document.getElementById('endTitle').innerText = win ? "TEBRİKLER KAZANDINIZ!" : "OYUN BİTTİ";
+      document.getElementById('endSubtitle').innerText = msg;
+    }
+
+    document.getElementById('btnRestart').onclick = () => { lives = 3; setScreen('menuScreen'); };
+  </script>
+</body>
+</html>
